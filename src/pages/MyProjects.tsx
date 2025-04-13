@@ -340,7 +340,7 @@ const MyProjects = () => {
             <CardHeader className="pb-0">
               <div className="flex flex-col md:flex-row justify-between md:items-center">
                 <div>
-                  <Badge className={getStatusColor(activeProject.status)} className="mb-2">
+                  <Badge className={getStatusColor(activeProject.status)}>
                     {activeProject.status}
                   </Badge>
                   <CardTitle className="text-2xl">{activeProject.name}</CardTitle>

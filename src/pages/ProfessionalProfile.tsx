@@ -25,6 +25,24 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 
 // Mock data for professionals
@@ -76,7 +94,8 @@ const mockProfessionals = [
         comment: "David helped us design a sustainable addition to our home. His knowledge and attention to detail were impressive.",
         userImage: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
       }
-    ]
+    ],
+    availability: ["Morning", "Afternoon", "Evening"]
   },
   {
     id: "2",
@@ -118,7 +137,8 @@ const mockProfessionals = [
         comment: "We loved working with Sophia on our home redesign. She created a beautiful, functional space that perfectly matches our style.",
         userImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
       }
-    ]
+    ],
+    availability: ["Afternoon", "Evening"]
   }
 ];
 
@@ -126,7 +146,11 @@ const ProfessionalProfile = () => {
   const { id } = useParams<{ id: string }>();
   const [professional, setProfessional] = useState<any>(null);
   const [date, setDate] = useState<Date | undefined>(undefined);
+  const [timeSlot, setTimeSlot] = useState<string>("");
+  const [projectType, setProjectType] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [bookingComplete, setBookingComplete] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -155,10 +179,32 @@ const ProfessionalProfile = () => {
       return;
     }
 
-    toast({
-      title: "Booking requested",
-      description: `Your appointment with ${professional.name} on ${format(date, 'PPP')} has been requested.`,
-    });
+    if (!timeSlot) {
+      toast({
+        title: "Please select a time slot",
+        description: "You need to choose a time slot for your booking",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setBookingComplete(true);
+    
+    setTimeout(() => {
+      setDialogOpen(false);
+      toast({
+        title: "Booking confirmed!",
+        description: `Your appointment with ${professional.name} on ${format(date, 'PPP')} at ${timeSlot} has been scheduled.`,
+      });
+      
+      // Reset form after booking
+      setTimeout(() => {
+        setBookingComplete(false);
+        setDate(undefined);
+        setTimeSlot("");
+        setProjectType("");
+      }, 500);
+    }, 1500);
   };
 
   if (loading) {
@@ -430,9 +476,120 @@ const ProfessionalProfile = () => {
                     </div>
                   </div>
                   
-                  <Button className="w-full mb-4" onClick={handleBooking}>
-                    Book Now
-                  </Button>
+                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full mb-4">
+                        Book Now
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Book an Appointment</DialogTitle>
+                        <DialogDescription>
+                          Complete your booking with {professional.name}
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      {bookingComplete ? (
+                        <div className="py-6 flex flex-col items-center">
+                          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                            <Check className="h-8 w-8 text-green-600" />
+                          </div>
+                          <h3 className="text-xl font-semibold text-center">Booking Confirmed!</h3>
+                          <p className="text-gray-500 text-center mt-2">
+                            Your appointment has been scheduled successfully.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <label htmlFor="date" className="text-right">
+                                Date
+                              </label>
+                              <div className="col-span-3">
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      id="date"
+                                      variant="outline"
+                                      className="w-full justify-start text-left font-normal"
+                                    >
+                                      {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <CalendarComponent
+                                      mode="single"
+                                      selected={date}
+                                      onSelect={setDate}
+                                      initialFocus
+                                      className="pointer-events-auto"
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <label htmlFor="time" className="text-right">
+                                Time Slot
+                              </label>
+                              <Select 
+                                value={timeSlot} 
+                                onValueChange={setTimeSlot}
+                              >
+                                <SelectTrigger className="col-span-3">
+                                  <SelectValue placeholder="Select time" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {professional.availability.map((slot: string) => (
+                                    <SelectItem key={slot} value={slot}>
+                                      {slot}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <label htmlFor="project" className="text-right">
+                                Project Type
+                              </label>
+                              <Select 
+                                value={projectType} 
+                                onValueChange={setProjectType}
+                              >
+                                <SelectTrigger className="col-span-3">
+                                  <SelectValue placeholder="Select project type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="residential">Residential Construction</SelectItem>
+                                  <SelectItem value="commercial">Commercial Project</SelectItem>
+                                  <SelectItem value="renovation">Renovation</SelectItem>
+                                  <SelectItem value="consultation">Consultation Only</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <label htmlFor="notes" className="text-right">
+                                Notes
+                              </label>
+                              <Textarea
+                                id="notes"
+                                placeholder="Add any special requirements or questions"
+                                className="col-span-3"
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button type="submit" onClick={handleBooking}>Confirm Booking</Button>
+                          </DialogFooter>
+                        </>
+                      )}
+                    </DialogContent>
+                  </Dialog>
                   
                   <div className="text-center text-sm text-gray-500">
                     <p>No payment charged until after the consultation</p>
